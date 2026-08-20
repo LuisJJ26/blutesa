@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load static %}
+{% block titulo %}{{ orden.numero_formateado }} — Órdenes de Trabajo{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'ordenes/css/ordenes.css' %}">{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <h1>{{ orden.numero_formateado }} — {{ orden.cliente_nombre }}</h1>
+  <p>{{ orden.get_tipo_servicio_display }} · {{ orden.fecha }} · Creada por {{ orden.creado_por }}</p>
+</div>
+
+<div class="tarjeta">
+  <h2>Datos de la orden <span class="badge badge-{{ orden.estado }}">{{ orden.get_estado_display }}</span></h2>
+  <div class="grid-datos">
+    <div><label>Código de cliente</label><p>{{ orden.cliente_codigo|default:"—" }}</p></div>
+    <div><label>Barrio</label><p>{{ orden.barrio|default:"—" }}</p></div>
+    <div><label>Dirección</label><p>{{ orden.direccion|default:"—" }}</p></div>
+    <div><label>Teléfono</label><p>{{ orden.telefono|default:"—" }}</p></div>
+    <div><label>Técnico asignado</label><p>{{ orden.tecnico|default:"Sin asignar" }}</p></div>
+    <div><label>Posibilidad Técnica</label><p>{{ orden.get_posibilidad_tecnica_display|default:"—" }}</p></div>
+    {% if orden.tipo_servicio_detalle %}<div><label>Detalle</label><p>{{ orden.tipo_servicio_detalle }}</p></div>{% endif %}
+  </div>
+  {% if orden.observaciones %}<p class="subnota">{{ orden.observaciones }}</p>{% endif %}
+</div>
+
+{% if orden.estado == 'CERRADA' %}
+<div class="tarjeta">
+  <h2>Materiales usados</h2>
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr><th>Concepto</th><th>Cantidad</th><th>Valor</th></tr>
+    {% for linea in lineas %}
+    <tr><td>{{ linea.get_concepto_display }}</td><td>{{ linea.cantidad|default:"—" }}</td><td>{{ linea.valor|default:"—" }}</td></tr>
+    {% empty %}
+    <tr><td colspan="3" class="vacio">Sin materiales registrados.</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+
+  <div class="grid-datos" style="margin-top:1.25rem;">
+    <div><label>Reparado</label><p>{{ orden.get_reparado_display|default:"—" }}</p></div>
+    <div><label>Tenía cable anteriormente</label><p>{{ orden.get_tenia_cable_anteriormente_display|default:"—" }}</p></div>
+    {% if orden.nombre_anterior %}<div><label>A nombre de quién</label><p>{{ orden.nombre_anterior }}</p></div>{% endif %}
+    <div><label>Fecha de elaboración</label><p>{{ orden.fecha_elaboracion|default:"—" }}</p></div>
+    <div><label>Ubicación GPS</label>
+      <p>
+        {% if orden.sin_georreferencia %}Sin georreferencia — {{ orden.motivo_sin_gps }}
+        {% elif orden.gps_lat %}{{ orden.gps_lat|floatformat:5 }}, {{ orden.gps_lng|floatformat:5 }}
+          <span class="texto-atenuado">(±{{ orden.gps_precision_m|floatformat:0 }} m)</span>
+        {% else %}—{% endif %}
+      </p>
+    </div>
+    <div><label>Cerrada por</label><p>{{ orden.cerrado_por }} · {{ orden.fecha_cierre|date:"d/m/Y H:i" }}</p></div>
+    <div><label>Autorizado por</label><p>{{ orden.autorizado_por|default:"—" }}</p></div>
+  </div>
+
+  {% if fotos %}
+  <div style="margin-top:1.25rem;">
+    <label>Foto del trabajo realizado</label>
+    <div class="fotos-grid">
+      {% for foto in fotos %}
+      <div class="foto-item">
+        {% if foto.url_publica %}<a href="{{ foto.url_publica }}" target="_blank"><img src="{{ foto.url_publica }}" alt="Foto del trabajo realizado"></a>
+        {% else %}<span class="texto-atenuado">{{ foto.ruta_nextcloud }}</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="tarjeta">
+  <h2>Acciones</h2>
+  <div class="fila-acciones">
+    {% if puede_cerrar %}
+    <a class="btn btn-verde" href="{% url 'ordenes:cerrar' orden.pk %}">Cerrar orden</a>
+    {% endif %}
+    {% if puede_cancelar %}
+    <form method="post" action="{% url 'ordenes:cancelar' orden.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-rojo" type="submit" onclick="return confirm('¿Cancelar esta orden de trabajo?');">Cancelar orden</button>
+    </form>
+    {% endif %}
+    <a class="btn btn-gris" href="{% url 'ordenes:imprimir' orden.pk %}" target="_blank">Imprimir</a>
+  </div>
+</div>
+{% endblock %}

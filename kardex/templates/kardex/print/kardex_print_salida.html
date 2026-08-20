@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>{{ documento.numero_formateado }}</title>
+<style>
+  @page { size: landscape; margin: 0.4in; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #000;
+    margin: 0;
+    padding: 0.4in;
+  }
+  .barra-pantalla {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .barra-pantalla button {
+    font-family: Arial, sans-serif;
+    padding: 0.5rem 1.2rem;
+    border: 1px solid #14355c;
+    background: #14355c;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+  @media print { .barra-pantalla { display: none; } }
+
+  table.doc {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  table.doc td {
+    padding: 2px 4px;
+    vertical-align: middle;
+    font-size: 10.5pt;
+  }
+  .sin-borde td { border: none; }
+
+  .titulo-empresa {
+    font-size: 16pt;
+    font-weight: bold;
+    text-align: center;
+    border-top: 1px solid #000;
+    padding-top: 6px;
+  }
+  .titulo-blutesa {
+    font-size: 11pt;
+    font-weight: bold;
+    text-align: center;
+  }
+  .titulo-doc {
+    font-size: 14pt;
+    font-weight: bold;
+    text-align: right;
+  }
+  .num-label {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #ff0000;
+    text-align: right;
+  }
+  .num-valor {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #ff0000;
+    text-align: center;
+  }
+  .campo-parte {
+    font-size: 9.5pt;
+    color: #444;
+    vertical-align: top;
+    padding-top: 10px;
+    font-style: italic;
+  }
+  .campo-linea {
+    font-size: 11pt;
+    border-bottom: 1px solid #000;
+  }
+
+  .th-tabla {
+    font-size: 9.5pt;
+    font-weight: bold;
+    text-align: center;
+    border: 1px solid #000;
+    background: #fff;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  .td-tabla {
+    font-size: 10pt;
+    text-align: center;
+    border: 1px solid #000;
+    height: 19.5pt;
+  }
+  .td-tabla.izquierda { text-align: left; }
+
+  .fila-total td { border-top: 1px solid #000; }
+  .total-label { font-size: 11pt; font-weight: bold; text-align: right; }
+  .total-valor {
+    font-size: 10pt;
+    font-weight: bold;
+    text-align: center;
+    border: 1px solid #000;
+  }
+
+  .firma-caja {
+    text-align: center;
+    padding-top: 30px;
+  }
+  .firma-linea {
+    border-top: 1px solid #000;
+    padding-top: 4px;
+    font-size: 10pt;
+  }
+  .firma-img { max-height: 45px; max-width: 90%; margin-bottom: -6px; }
+</style>
+</head>
+<body>
+
+<div class="barra-pantalla">
+  <button onclick="window.print()">Imprimir / Guardar PDF</button>
+</div>
+
+<table class="doc">
+  <colgroup>
+    <col style="width:9%"><col style="width:6%"><col style="width:6%"><col style="width:6%">
+    <col style="width:20%"><col style="width:6.5%"><col style="width:5.5%"><col style="width:8%">
+    <col style="width:6%"><col style="width:3%"><col style="width:24%">
+  </colgroup>
+
+  <tr class="sin-borde"><td colspan="11" class="titulo-empresa">BLUEFIELDS, TELEVICABLE, S.A</td></tr>
+  <tr class="sin-borde"><td colspan="11" class="titulo-blutesa">BLUTESA</td></tr>
+  <tr class="sin-borde">
+    <td colspan="7" class="titulo-doc">{{ documento.titulo }}</td>
+    <td colspan="2" class="num-label">N&deg;</td>
+    <td colspan="2" class="num-valor">{{ documento.numero }}</td>
+  </tr>
+  <tr class="sin-borde"><td colspan="11" style="height:6pt;"></td></tr>
+
+  <tr class="sin-borde">
+    <td colspan="7" rowspan="3" class="campo-parte">
+      Quién se lleva cada material se indica por línea, en la columna "Entregado a".
+    </td>
+    <td colspan="4" class="campo-linea">Fecha: {{ documento.fecha|date:"d/m/Y" }}</td>
+  </tr>
+  <tr class="sin-borde"><td colspan="4" style="height:6pt;"></td></tr>
+  <tr class="sin-borde">
+    <td colspan="4" class="campo-linea">{{ documento.etiqueta_referencia }} {{ documento.referencia }}</td>
+  </tr>
+  <tr class="sin-borde"><td colspan="11" style="height:6pt;"></td></tr>
+
+  <tr>
+    <td rowspan="2" class="th-tabla">Clasif.</td>
+    <td colspan="3" class="th-tabla">LOCALIZACION</td>
+    <td rowspan="2" class="th-tabla">DESCRIPCION</td>
+    <td rowspan="2" class="th-tabla">Cantidad</td>
+    <td rowspan="2" class="th-tabla">Unidad</td>
+    <td rowspan="2" class="th-tabla">Precio Unit.</td>
+    <td colspan="2" rowspan="2" class="th-tabla">IMPORTE</td>
+    <td rowspan="2" class="th-tabla">ENTREGADO A</td>
+  </tr>
+  <tr>
+    <td class="th-tabla">E</td><td class="th-tabla">L</td><td class="th-tabla">C</td>
+  </tr>
+
+  {% for linea in lineas %}
+  <tr>
+    <td class="td-tabla">{{ linea.clasif }}</td>
+    <td class="td-tabla">{{ linea.loc_e }}</td>
+    <td class="td-tabla">{{ linea.loc_l }}</td>
+    <td class="td-tabla">{{ linea.loc_c }}</td>
+    <td class="td-tabla izquierda">{{ linea.descripcion }}</td>
+    <td class="td-tabla">{{ linea.cantidad|default:"" }}</td>
+    <td class="td-tabla">{{ linea.unidad }}</td>
+    <td class="td-tabla">{{ linea.precio_unitario|default:"" }}</td>
+    <td colspan="2" class="td-tabla">{{ linea.importe|default:"" }}</td>
+    <td class="td-tabla izquierda">{{ linea.entregado_a }}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="11" class="td-tabla" style="color:#888;">Sin líneas registradas</td></tr>
+  {% endfor %}
+
+  <tr class="fila-total">
+    <td colspan="8" class="total-label">TOTAL</td>
+    <td colspan="2" class="total-valor">{{ documento.total_importe }}</td>
+    <td></td>
+  </tr>
+
+  <tr class="sin-borde"><td colspan="11" style="height:20pt;"></td></tr>
+
+  <tr class="sin-borde">
+    <td colspan="3" class="firma-caja">
+      {% if documento.creado_por.firma %}<img class="firma-img" src="{{ documento.creado_por.firma.url }}">{% endif %}
+      <div class="firma-linea">Recepci&oacute;n de Bodega<br>{{ documento.creado_por }}</div>
+    </td>
+    <td style="width:1%;"></td>
+    <td colspan="3" class="firma-caja">
+      {% if documento.aprobado_por.firma %}<img class="firma-img" src="{{ documento.aprobado_por.firma.url }}">{% endif %}
+      <div class="firma-linea">Aprobado (Jefe de Operaciones)<br>{{ documento.aprobado_por|default:"" }}</div>
+    </td>
+    <td style="width:1%;"></td>
+    <td colspan="3" class="firma-caja">
+      {% if documento.revisado_por.firma %}<img class="firma-img" src="{{ documento.revisado_por.firma.url }}">{% endif %}
+      <div class="firma-linea">Revisado (Auxiliar Contable)<br>{{ documento.revisado_por|default:"" }}</div>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8030:8030"
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+      - ./media:/app/media
+      - ./.vapid_keys.json:/app/.vapid_keys.json
+    environment:
+      # Para pruebas en la red local de la empresa (varios celulares/computadoras
+      # entrando por la IP de esta máquina). Antes de un despliegue real de verdad,
+      # esto debe cambiarse por el dominio/IP exacto, no dejarlo en "*".
+      DJANGO_ALLOWED_HOSTS: "*"
+      DJANGO_DEBUG: "True"
+      # Apple Web Push (Safari/iOS) rechaza el JWT de VAPID con "403 BadJwtToken" si el "sub"
+      # usa un dominio inventado — tiene que ser un contacto real. Defínelo en tu propio
+      # archivo .env local (fuera de git, docker compose lo lee solo) — nunca lo hardcodees
+      # aquí, este archivo es público.
+      VAPID_CLAIM_EMAIL: "${VAPID_CLAIM_EMAIL:?Define VAPID_CLAIM_EMAIL en tu .env local (ver .env.example)}"
+    restart: unless-stopped

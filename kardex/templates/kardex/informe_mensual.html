@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block titulo %}Informe mensual — {{ nombre_mes }} {{ anio }}{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina no-imprimir">
+  <h1>Informe mensual</h1>
+  <p>Toda la actividad de Entrada y Salida de Almacén centralizada, mes por mes.</p>
+</div>
+
+<div class="tarjeta no-imprimir">
+  <div class="selector-mes">
+    <a class="btn btn-gris" href="?anio={{ anio_anterior }}&mes={{ mes_anterior }}">&larr; Mes anterior</a>
+    <form method="get" style="display:flex;gap:.5rem;align-items:center;">
+      <input type="month" name="periodo" value="{{ anio }}-{{ mes|stringformat:'02d' }}"
+             onchange="var p=this.value.split('-'); window.location='?anio='+p[0]+'&mes='+parseInt(p[1],10);">
+    </form>
+    <a class="btn btn-gris" href="?anio={{ anio_siguiente }}&mes={{ mes_siguiente }}">Mes siguiente &rarr;</a>
+    <button class="btn" type="button" onclick="window.print()" style="margin-left:auto;">Imprimir / Guardar PDF</button>
+  </div>
+</div>
+
+<div class="tarjeta">
+  <h2>{{ nombre_mes }} {{ anio }}{% if es_mes_actual %} <span class="badge badge-ENVIADO">Mes en curso</span>{% endif %}</h2>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="etiqueta">Documentos totales</div>
+      <div class="valor">{{ total_documentos }}</div>
+    </div>
+    <div class="kpi">
+      <div class="etiqueta">Entradas de Almacén</div>
+      <div class="valor">{{ resumen_entrada.cantidad }}</div>
+      <div class="subvalor">Importe: {{ resumen_entrada.total_importe }}</div>
+    </div>
+    <div class="kpi">
+      <div class="etiqueta">Salidas de Almacén</div>
+      <div class="valor">{{ resumen_salida.cantidad }}</div>
+      <div class="subvalor">Importe: {{ resumen_salida.total_importe }}</div>
+    </div>
+    <div class="kpi">
+      <div class="etiqueta">Revisados (cerrados)</div>
+      <div class="valor">{{ conteo_estado.REVISADO|default:0 }}</div>
+    </div>
+    <div class="kpi">
+      <div class="etiqueta">Rechazados</div>
+      <div class="valor">{{ conteo_estado.RECHAZADO|default:0 }}</div>
+    </div>
+    <div class="kpi">
+      <div class="etiqueta">Aún en trámite</div>
+      <div class="valor">{{ en_tramite }}</div>
+      <div class="subvalor">Abierto + Aprobado (pendiente revisión)</div>
+    </div>
+  </div>
+</div>
+
+<div class="tarjeta">
+  <h2>Documentos del mes</h2>
+  {% if documentos %}
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr>
+      <th>Documento</th><th>Tipo</th><th>Fecha</th><th>Estado</th>
+      <th>Creado por</th><th>Revisado por</th>
+      <th>Total importe</th><th>Motivo de rechazo</th><th class="no-imprimir"></th>
+    </tr>
+    {% for documento in documentos %}
+    <tr>
+      <td><strong>{{ documento.numero_formateado }}</strong></td>
+      <td>{{ documento.titulo }}</td>
+      <td>{{ documento.fecha }}</td>
+      <td><span class="badge badge-{{ documento.estado }}">{{ documento.get_estado_display }}</span></td>
+      <td>{{ documento.creado_por }}</td>
+      <td>{{ documento.revisado_por|default:"—" }}</td>
+      <td>{{ documento.total_importe }}</td>
+      <td>{% if documento.estado == 'RECHAZADO' %}{{ documento.motivo_rechazo }}{% endif %}</td>
+      <td class="no-imprimir"><a class="btn btn-gris" style="padding:.3rem .65rem;font-size:.78rem;" href="{% url 'kardex:detalle' documento.pk %}">Ver</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p class="vacio">No hay documentos registrados en {{ nombre_mes|lower }} de {{ anio }}.</p>
+  {% endif %}
+</div>
+{% endblock %}

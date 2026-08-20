@@ -1,0 +1,36 @@
+.filtros-grupo {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin-bottom: .75rem;
+}
+.filtros-etiqueta {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-right: .2rem;
+}
+
+.btn-filtro {
+  display: inline-flex;
+  align-items: center;
+  padding: .4rem .85rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--gray-600);
+  font-size: .82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .12s var(--ease), border-color .12s var(--ease), color .12s var(--ease);
+}
+.btn-filtro:hover { background: var(--brand-50); border-color: var(--brand-200); }
+.btn-filtro.activo {
+  background: linear-gradient(135deg, var(--brand-600), var(--brand-500));
+  border-color: transparent;
+  color: #fff;
+}
+
+.badge-tipo-CABLE_TV { background: var(--info-50); color: var(--info-700); }
+.badge-tipo-FIBRA    { background: var(--success-50); color: var(--success-700); }

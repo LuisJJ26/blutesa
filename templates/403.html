@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titulo %}Sin permiso — Kardex BLUTESA{% endblock %}
+{% block contenido %}
+<div class="pantalla-login">
+  <div class="tarjeta-login" style="text-align:center;">
+    <div class="isotipo-grande">{% include "_isotipo.html" with tam=56 sufijo="403" %}</div>
+    <h2 style="font-size:2.2rem;margin-bottom:.3rem;">403</h2>
+    <p class="subtitulo" style="margin-bottom:1.5rem;">
+      Tu cuenta no tiene permiso para ver esta sección.
+    </p>
+    <a class="btn" href="{% url 'inicio' %}">Volver al inicio</a>
+  </div>
+</div>
+{% endblock %}

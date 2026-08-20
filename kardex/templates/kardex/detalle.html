@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block titulo %}{{ documento.numero_formateado }} — Kardex BLUTESA{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <h1>{{ documento.titulo }} — {{ documento.numero_formateado }}</h1>
+  <p>{{ documento.fecha }} · Creado por {{ documento.creado_por }}</p>
+</div>
+
+<div class="tarjeta">
+  <div class="stepper">
+    <div class="paso {% if documento.estado == 'ABIERTO' or documento.estado == 'RECHAZADO' %}actual{% else %}completo{% endif %}">
+      <div class="punto">1</div>
+      <div class="etiqueta">Bodeguero</div>
+      <div class="subetiqueta">{{ documento.creado_por }}</div>
+    </div>
+    <div class="paso {% if documento.aprobado_por %}completo{% endif %}">
+      <div class="linea"></div>
+      <div class="punto">2</div>
+      <div class="etiqueta">Jefe de Operaciones</div>
+      <div class="subetiqueta">
+        {% if documento.aprobado_por %}{{ documento.aprobado_por }} (auto)
+        {% else %}Pendiente{% endif %}
+      </div>
+    </div>
+    <div class="paso
+      {% if documento.estado == 'RECHAZADO' %}rechazado
+      {% elif documento.estado == 'APROBADO' %}actual
+      {% elif documento.estado == 'REVISADO' %}completo
+      {% endif %}">
+      <div class="linea"></div>
+      <div class="punto">3</div>
+      <div class="etiqueta">Auxiliar Contable</div>
+      <div class="subetiqueta">
+        {% if documento.estado == 'RECHAZADO' %}Rechazó: {{ documento.rechazado_por }}
+        {% elif documento.revisado_por %}{{ documento.revisado_por }}
+        {% else %}Pendiente{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if documento.estado == 'RECHAZADO' %}
+    <ul class="mensajes" style="margin-bottom:1rem;">
+      <li class="error"><strong>Rechazado por {{ documento.rechazado_por }}:</strong> {{ documento.motivo_rechazo }}</li>
+    </ul>
+    {% if puede_corregir_ahora %}
+    <form method="post" action="{% url 'kardex:corregir' documento.pk %}" style="margin-bottom:1.25rem;">
+      {% csrf_token %}
+      <button class="btn" type="submit">Corregir y reabrir</button>
+    </form>
+    {% endif %}
+  {% endif %}
+
+  {% if cabecera_form %}
+  <form method="post" action="{% url 'kardex:actualizar_cabecera' documento.pk %}">
+    {% csrf_token %}
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+      {% if cabecera_form.parte %}
+      <div>
+        <label for="{{ cabecera_form.parte.id_for_label }}">{{ documento.etiqueta_parte }}</label>
+        {{ cabecera_form.parte }}
+      </div>
+      {% endif %}
+      <div>
+        <label for="{{ cabecera_form.referencia.id_for_label }}">{{ documento.etiqueta_referencia }}</label>
+        {{ cabecera_form.referencia }}
+      </div>
+      <div style="align-self:flex-end;">
+        <button class="btn btn-gris" type="submit">Guardar</button>
+      </div>
+    </div>
+  </form>
+  {% else %}
+  <p>
+    {% if documento.tipo != 'SA' %}<strong>{{ documento.etiqueta_parte }}</strong> {{ documento.parte|default:"—" }} &nbsp;&nbsp;{% endif %}
+    <strong>{{ documento.etiqueta_referencia }}</strong> {{ documento.referencia|default:"—" }}
+  </p>
+  {% endif %}
+  {% if documento.tipo == 'SA' %}
+  <p class="subnota">Quién se lleva cada material se registra por línea (columna "Entregado a"), porque puede ser un técnico distinto en cada movimiento del día.</p>
+  {% endif %}
+</div>
+
+<div class="tarjeta">
+  <h2>Líneas</h2>
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr>
+      <th>Clasif.</th><th>E</th><th>L</th><th>C</th><th>Descripción</th>
+      <th>Cantidad</th><th>Unidad</th><th>Precio Unit.</th><th>Importe</th>
+      {% if documento.tipo == 'SA' %}<th>Entregado a</th>{% endif %}
+      {% if puede_editar_lineas %}<th></th>{% endif %}
+    </tr>
+    {% for linea in lineas %}
+    <tr>
+      <td>{{ linea.clasif }}</td>
+      <td>{{ linea.loc_e }}</td>
+      <td>{{ linea.loc_l }}</td>
+      <td>{{ linea.loc_c }}</td>
+      <td>{{ linea.descripcion }}</td>
+      <td>{{ linea.cantidad|default:"" }}</td>
+      <td>{{ linea.unidad }}</td>
+      <td>{{ linea.precio_unitario|default:"" }}</td>
+      <td>{{ linea.importe|default:"" }}</td>
+      {% if documento.tipo == 'SA' %}<td>{{ linea.entregado_a }}</td>{% endif %}
+      {% if puede_editar_lineas %}
+      <td><a class="btn btn-gris" style="padding:.3rem .65rem;font-size:.78rem;" href="{% url 'kardex:editar_linea' documento.pk linea.pk %}">Editar</a></td>
+      {% endif %}
+    </tr>
+    {% empty %}
+    <tr><td colspan="11" class="vacio">Todavía no hay líneas.</td></tr>
+    {% endfor %}
+    <tr>
+      <td colspan="8" style="text-align:right;font-weight:700;color:var(--navy-800);">TOTAL</td>
+      <td style="font-weight:700;color:var(--navy-800);">{{ documento.total_importe }}</td>
+      {% if documento.tipo == 'SA' %}<td></td>{% endif %}
+      {% if puede_editar_lineas %}<td></td>{% endif %}
+    </tr>
+  </table>
+  </div>
+
+  {% if linea_form %}
+  <form method="post" action="{% url 'kardex:agregar_linea' documento.pk %}" class="form-linea-nueva">
+    {% csrf_token %}
+    <div class="form-linea-grid">
+      <div class="campo campo-clasif"><label>Clasif.</label>{{ linea_form.clasif }}</div>
+      <div class="campo campo-loc"><label>E</label>{{ linea_form.loc_e }}</div>
+      <div class="campo campo-loc"><label>L</label>{{ linea_form.loc_l }}</div>
+      <div class="campo campo-loc"><label>C</label>{{ linea_form.loc_c }}</div>
+      <div class="campo campo-descripcion"><label>Descripción</label>{{ linea_form.descripcion }}</div>
+      <div class="campo"><label>Cantidad</label>{{ linea_form.cantidad }}</div>
+      <div class="campo"><label>Unidad</label>{{ linea_form.unidad }}</div>
+      <div class="campo"><label>Precio Unit.</label>{{ linea_form.precio_unitario }}</div>
+      <div class="campo"><label>Importe</label>{{ linea_form.importe }}</div>
+      {% if documento.tipo == 'SA' %}
+      <div class="campo campo-descripcion"><label>Entregado a</label>{{ linea_form.entregado_a }}</div>
+      {% endif %}
+    </div>
+    <button class="btn btn-verde" type="submit" style="margin-top:.9rem;">Agregar línea</button>
+  </form>
+  {% elif puede_editar_lineas %}
+  <p class="subnota">Puedes corregir una línea existente con "Editar", pero no agregar líneas nuevas desde aquí — eso le toca al bodeguero.</p>
+  {% endif %}
+</div>
+
+<div class="tarjeta">
+  <h2>Acciones</h2>
+  <div class="fila-acciones">
+
+    {% if puede_gestionar_cabecera and documento.puede_enviar %}
+    <form method="post" action="{% url 'kardex:cerrar_enviar' documento.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-verde" type="submit"
+        onclick="return confirm('¿Cerrar el día? Se aprueba automáticamente y pasa a revisión de Auxiliar Contable. Ya no podrás agregar más líneas hoy.');">
+        Cerrar y enviar a revisión contable
+      </button>
+    </form>
+    {% endif %}
+
+    {% if puede_revisar_ahora %}
+    <form method="post" action="{% url 'kardex:revisar' documento.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-verde" type="submit">Marcar como revisado</button>
+    </form>
+    {% endif %}
+
+    {% if rechazo_form %}
+    <form method="post" action="{% url 'kardex:rechazar' documento.pk %}" style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:flex-start;">
+      {% csrf_token %}
+      {{ rechazo_form.motivo_rechazo }}
+      <button class="btn btn-rojo" type="submit">Rechazar</button>
+    </form>
+    {% endif %}
+
+    <a class="btn btn-gris" href="{% url 'kardex:imprimir' documento.pk %}" target="_blank">Imprimir</a>
+  </div>
+</div>
+{% endblock %}

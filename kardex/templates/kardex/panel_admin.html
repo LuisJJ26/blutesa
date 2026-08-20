@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titulo %}Administración — Kardex BLUTESA{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <h1>Administración</h1>
+  <p>Visibilidad completa de todos los kardex, sin importar el rol que los creó o los está tramitando.</p>
+</div>
+
+<p style="margin-top:-1rem;margin-bottom:1.25rem;">
+  <a class="btn btn-gris" href="{% url 'kardex:informe_mensual' %}">Ver informe mensual</a>
+</p>
+
+<div class="tarjeta">
+  <h2>Todos los documentos</h2>
+  {% if documentos %}
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr><th>Documento</th><th>Fecha</th><th>Estado</th><th>Creado por</th><th></th></tr>
+    {% for documento in documentos %}
+    <tr>
+      <td><strong>{{ documento.numero_formateado }}</strong></td>
+      <td>{{ documento.fecha }}</td>
+      <td><span class="badge badge-{{ documento.estado }}">{{ documento.get_estado_display }}</span></td>
+      <td>{{ documento.creado_por }}</td>
+      <td><a class="btn btn-gris" href="{% url 'kardex:detalle' documento.pk %}">Ver</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p class="vacio">Todavía no hay documentos.</p>
+  {% endif %}
+  <p style="margin-top:1.25rem;"><a class="btn btn-gris" href="/admin/">Ir al panel de administración de Django</a></p>
+</div>
+{% endblock %}

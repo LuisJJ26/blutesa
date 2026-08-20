@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titulo %}Editar línea — {{ documento.numero_formateado }}{% endblock %}
+{% block contenido %}
+<div class="encabezado-pagina">
+  <h1>Editar línea</h1>
+  <p>{{ documento.titulo }} — {{ documento.numero_formateado }} · {{ documento.fecha }}</p>
+</div>
+<div class="tarjeta" style="max-width:560px;">
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+    <p>
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% for error in field.errors %}<div style="color:var(--danger-500);font-size:.82rem;margin-top:.25rem;">{{ error }}</div>{% endfor %}
+    </p>
+    {% endfor %}
+    <p style="margin-top:.5rem;">
+      <button class="btn btn-verde" type="submit">Guardar cambios</button>
+      <a class="btn btn-gris" href="{% url 'kardex:detalle' documento.pk %}">Cancelar</a>
+    </p>
+  </form>
+</div>
+{% endblock %}

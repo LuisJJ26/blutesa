@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+_respaldos/
+.git/
+.env
+db.sqlite3
+media/
+.vapid_keys.json
+Formatos BLUTESA/
+logo/

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block titulo %}Mi perfil{% endblock %}
+{% block contenido %}
+<div class="encabezado-pagina">
+  <h1>Mi perfil</h1>
+  <p>Tu firma electrónica y las notificaciones de este dispositivo.</p>
+</div>
+
+<div class="tarjeta" style="max-width:440px;">
+  <h2>Firma electrónica</h2>
+  <p class="subnota" style="margin-top:-.5rem;margin-bottom:1rem;">Se estampa automáticamente en los kardex que recepciones, apruebes o revises.</p>
+  {% if user.firma %}
+    <p><img class="firma-img" src="{{ user.firma.url }}" alt="Firma actual"></p>
+  {% else %}
+    <div class="firma-vacia">Todavía no has subido tu firma</div>
+  {% endif %}
+  <form method="post" enctype="multipart/form-data" style="margin-top:1.25rem;">
+    {% csrf_token %}
+    <label for="{{ form.firma.id_for_label }}">{{ form.firma.label }}</label>
+    {{ form.firma }}
+    {% for error in form.firma.errors %}<div style="color:var(--danger-500);font-size:.82rem;margin-top:.25rem;">{{ error }}</div>{% endfor %}
+    <p style="margin-top:1rem;"><button class="btn" type="submit">Guardar firma</button></p>
+  </form>
+</div>
+
+<div class="tarjeta" style="max-width:440px;">
+  <h2>Notificaciones</h2>
+  <p class="subnota" style="margin-top:-.5rem;margin-bottom:1rem;">
+    Recibe un aviso en este dispositivo cuando te toque aprobar, revisar, o si te rechazan un documento.
+  </p>
+  <p id="estado-notificaciones" class="texto-atenuado">Comprobando este dispositivo…</p>
+  <button class="btn" id="btn-notificaciones" type="button" style="display:none;"></button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script id="vapid-key" type="application/json">{{ vapid_public_key|default:"" }}</script>
+<script>
+(function () {
+  var estadoEl = document.getElementById('estado-notificaciones');
+  var btnEl = document.getElementById('btn-notificaciones');
+  var vapidKeyEl = document.getElementById('vapid-key');
+  var VAPID_PUBLIC_KEY = vapidKeyEl ? vapidKeyEl.textContent.trim() : '';
+  if (!estadoEl || !btnEl) return;
+
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    estadoEl.textContent = 'Este navegador no soporta notificaciones push.';
+    return;
+  }
+  if (!VAPID_PUBLIC_KEY) {
+    estadoEl.textContent = 'Las notificaciones no están configuradas todavía.';
+    return;
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    var rawData = atob(base64);
+    var salida = new Uint8Array(rawData.length);
+    for (var i = 0; i < rawData.length; i++) salida[i] = rawData.charCodeAt(i);
+    return salida;
+  }
+
+  function getCookie(nombre) {
+    var partes = document.cookie.split('; ');
+    for (var i = 0; i < partes.length; i++) {
+      if (partes[i].indexOf(nombre + '=') === 0) return decodeURIComponent(partes[i].split('=')[1]);
+    }
+    return '';
+  }
+
+  function enviarAlServidor(url, datos) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify(datos),
+    });
+  }
+
+  function actualizarUI(suscripcion) {
+    if (suscripcion) {
+      estadoEl.textContent = 'Notificaciones activas en este dispositivo.';
+      btnEl.textContent = 'Desactivar notificaciones';
+      btnEl.className = 'btn btn-gris';
+      btnEl.dataset.accion = 'desactivar';
+    } else {
+      estadoEl.textContent = 'Aún no has activado notificaciones en este dispositivo.';
+      btnEl.textContent = 'Activar notificaciones';
+      btnEl.className = 'btn btn-verde';
+      btnEl.dataset.accion = 'activar';
+    }
+    btnEl.style.display = 'inline-flex';
+  }
+
+  navigator.serviceWorker.ready.then(function (registro) {
+    registro.pushManager.getSubscription().then(actualizarUI);
+
+    btnEl.addEventListener('click', function () {
+      if (btnEl.dataset.accion === 'activar') {
+        Notification.requestPermission().then(function (permiso) {
+          if (permiso !== 'granted') {
+            estadoEl.textContent = 'No diste permiso para notificaciones en el navegador.';
+            return;
+          }
+          registro.pushManager
+            .subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) })
+            .then(function (nueva) {
+              var datos = nueva.toJSON();
+              datos.navegador = navigator.userAgent;
+              enviarAlServidor('{% url "guardar_suscripcion_push" %}', datos).then(function () {
+                actualizarUI(nueva);
+              });
+            });
+        });
+      } else {
+        registro.pushManager.getSubscription().then(function (actual) {
+          if (!actual) { actualizarUI(null); return; }
+          var endpoint = actual.endpoint;
+          actual.unsubscribe().then(function () {
+            enviarAlServidor('{% url "eliminar_suscripcion_push" %}', { endpoint: endpoint }).then(function () {
+              actualizarUI(null);
+            });
+          });
+        });
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

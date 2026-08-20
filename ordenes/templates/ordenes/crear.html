@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load static %}
+{% block titulo %}Nueva Orden de Trabajo{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'ordenes/css/ordenes.css' %}">{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <h1>Nueva Orden de Trabajo</h1>
+  <p>Digita los datos del cliente y el servicio solicitado. El técnico completará el resto al ejecutar y cerrar la orden.</p>
+</div>
+
+<div class="tarjeta">
+  {% if form.non_field_errors %}
+  <ul class="mensajes"><li class="error">{{ form.non_field_errors.0 }}</li></ul>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="buscador-cliente">
+      <label for="buscador-cliente-input">Buscar cliente existente</label>
+      <input
+        type="text"
+        id="buscador-cliente-input"
+        autocomplete="off"
+        placeholder="Nombre, código o contrato…"
+        data-url="{% url 'clientes:buscar_ajax' %}"
+        data-campo-nombre="{{ form.cliente_nombre.id_for_label }}"
+        data-campo-codigo="{{ form.cliente_codigo.id_for_label }}"
+        data-campo-barrio="{{ form.barrio.id_for_label }}"
+        data-campo-direccion="{{ form.direccion.id_for_label }}"
+        data-campo-telefono="{{ form.telefono.id_for_label }}"
+      >
+      <p class="campo-ayuda">Si el cliente aparece, selecciónalo para llenar sus datos automáticamente. Si es nuevo, digítalos abajo.</p>
+      <div class="filtros-grupo" id="buscador-cliente-filtros">
+        <button type="button" class="btn-filtro activo" data-tipo="">Todos</button>
+        <button type="button" class="btn-filtro" data-tipo="CABLE_TV">Cable/TV</button>
+        <button type="button" class="btn-filtro" data-tipo="FIBRA">Fibra/Internet</button>
+      </div>
+      <div id="buscador-cliente-resultados" class="buscador-cliente-resultados"></div>
+    </div>
+    <div class="form-linea-grid">
+      <div class="campo campo-descripcion">
+        <label for="{{ form.cliente_nombre.id_for_label }}">Nombres y Apellidos</label>
+        {{ form.cliente_nombre }}
+        {% for error in form.cliente_nombre.errors %}<p class="texto-atenuado" style="color:var(--danger-500);">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="campo">
+        <label for="{{ form.cliente_codigo.id_for_label }}">Código de cliente</label>
+        {{ form.cliente_codigo }}
+      </div>
+      <div class="campo">
+        <label for="{{ form.barrio.id_for_label }}">Barrio</label>
+        {{ form.barrio }}
+      </div>
+      <div class="campo campo-descripcion">
+        <label for="{{ form.direccion.id_for_label }}">Dirección</label>
+        {{ form.direccion }}
+      </div>
+      <div class="campo">
+        <label for="{{ form.telefono.id_for_label }}">Teléfono</label>
+        {{ form.telefono }}
+      </div>
+      <div class="campo">
+        <label for="{{ form.fecha.id_for_label }}">Fecha</label>
+        {{ form.fecha }}
+      </div>
+      <div class="campo">
+        <label for="{{ form.tipo_servicio.id_for_label }}">Tipo de Servicio</label>
+        {{ form.tipo_servicio }}
+      </div>
+      <div class="campo campo-descripcion">
+        <label for="{{ form.tipo_servicio_detalle.id_for_label }}">Detalle (si es "Otro")</label>
+        {{ form.tipo_servicio_detalle }}
+        {% for error in form.tipo_servicio_detalle.errors %}<p class="texto-atenuado" style="color:var(--danger-500);">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="campo">
+        <label for="{{ form.tecnico.id_for_label }}">Técnico asignado</label>
+        {{ form.tecnico }}
+      </div>
+      <div class="campo">
+        <label for="{{ form.posibilidad_tecnica.id_for_label }}">Posibilidad Técnica</label>
+        {{ form.posibilidad_tecnica }}
+        {% for error in form.posibilidad_tecnica.errors %}<p class="texto-atenuado" style="color:var(--danger-500);">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="campo campo-descripcion">
+        <label for="{{ form.observaciones.id_for_label }}">Observaciones</label>
+        {{ form.observaciones }}
+      </div>
+    </div>
+    <button class="btn btn-verde" type="submit" style="margin-top:1.1rem;">Crear Orden de Trabajo</button>
+  </form>
+</div>
+
+<div class="tarjeta">
+  <h2>Últimas órdenes creadas por ti</h2>
+  {% if recientes %}
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr><th>Orden</th><th>Cliente</th><th>Tipo de Servicio</th><th>Técnico</th><th>Estado</th><th></th></tr>
+    {% for orden in recientes %}
+    <tr>
+      <td><strong>{{ orden.numero_formateado }}</strong></td>
+      <td>{{ orden.cliente_nombre }}</td>
+      <td>{{ orden.get_tipo_servicio_display }}</td>
+      <td>{{ orden.tecnico|default:"Sin asignar" }}</td>
+      <td><span class="badge badge-{{ orden.estado }}">{{ orden.get_estado_display }}</span></td>
+      <td><a class="btn btn-gris" href="{% url 'ordenes:detalle' orden.pk %}">Ver</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p class="vacio">Todavía no has creado ninguna orden.</p>
+  {% endif %}
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'ordenes/js/buscar_cliente.js' %}"></script>{% endblock %}

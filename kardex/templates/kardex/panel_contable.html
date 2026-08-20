@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block titulo %}Auxiliar Contable — Kardex BLUTESA{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <h1>Revisión contable</h1>
+  <p>Los kardex que el bodeguero cierra quedan aprobados automáticamente y llegan aquí para tu revisión final — puedes revisarlos, editar una línea si algo está mal, o rechazarlos con motivo.</p>
+</div>
+
+<p style="margin-top:-1rem;margin-bottom:1.25rem;">
+  <a class="btn btn-gris" href="{% url 'kardex:informe_mensual' %}">Ver informe mensual</a>
+</p>
+
+<div class="tarjeta">
+  <h2>Pendientes de revisión</h2>
+  {% if pendientes %}
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr><th>Documento</th><th>Fecha</th><th>Creado por</th><th></th></tr>
+    {% for documento in pendientes %}
+    <tr>
+      <td><strong>{{ documento.numero_formateado }}</strong></td>
+      <td>{{ documento.fecha }}</td>
+      <td>{{ documento.creado_por }}</td>
+      <td><a class="btn" href="{% url 'kardex:detalle' documento.pk %}">Revisar</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p class="vacio">No hay documentos pendientes de revisión.</p>
+  {% endif %}
+</div>
+
+<div class="tarjeta">
+  <h2>Historial</h2>
+  {% if historial %}
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr><th>Documento</th><th>Fecha</th><th>Estado</th><th></th></tr>
+    {% for documento in historial %}
+    <tr>
+      <td><strong>{{ documento.numero_formateado }}</strong></td>
+      <td>{{ documento.fecha }}</td>
+      <td><span class="badge badge-{{ documento.estado }}">{{ documento.get_estado_display }}</span></td>
+      <td><a class="btn btn-gris" href="{% url 'kardex:detalle' documento.pk %}">Ver</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p class="vacio">Todavía no hay historial.</p>
+  {% endif %}
+</div>
+{% endblock %}

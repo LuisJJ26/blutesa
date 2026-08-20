@@ -1,0 +1,230 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+// Aplica el tema guardado ANTES de pintar la página (evita el parpadeo claro->oscuro).
+// Sin soporte de localStorage o de prefers-color-scheme no pasa nada, se queda en claro.
+(function () {
+  try {
+    var guardado = localStorage.getItem('tema');
+    if (guardado === 'claro' || guardado === 'oscuro') {
+      document.documentElement.setAttribute('data-tema', guardado);
+    }
+  } catch (e) { /* almacenamiento no disponible (modo privado, etc.) */ }
+})();
+</script>
+<title>{% block titulo %}Kardex BLUTESA{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'kardex/css/estilo.css' %}">
+{% block extra_css %}{% endblock %}
+
+<link rel="manifest" href="{% static 'kardex/manifest.webmanifest' %}">
+<meta name="theme-color" content="#1a2c4b">
+<link rel="icon" href="{% static 'kardex/img/favicon.ico' %}">
+<link rel="apple-touch-icon" href="{% static 'kardex/img/icons/apple-touch-icon.png' %}">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kardex BLUTESA">
+</head>
+<body>
+{% if user.is_authenticated %}
+<header class="app-header">
+  <a class="marca" href="{% url 'inicio' %}">
+    {% include "_isotipo.html" with tam=32 sufijo="header" %}
+    <span class="marca-texto">
+      <strong>BLUTESA</strong>
+      <span>Kardex de Almacén</span>
+    </span>
+  </a>
+  <button id="btn-menu" class="btn-hamburguesa" type="button" aria-expanded="false" aria-controls="nav-principal" aria-label="Abrir menú">
+    <span></span><span></span><span></span>
+  </button>
+
+  <nav id="nav-principal">
+    <button id="btn-instalar" class="btn btn-verde" type="button" style="display:none;padding:.4rem .8rem;font-size:.8rem;">
+      Instalar app
+    </button>
+
+    <div class="nav-grupo">
+      {% if user.rol == 'TECNICO' %}
+      <a href="{% url 'ordenes:panel_tecnico' %}">Mis Órdenes</a>
+      {% elif user.rol == 'JEFE_OPERACIONES' or user.es_admin %}
+      <a href="{% url 'ordenes:crear' %}">Nueva Orden</a>
+      <a href="{% url 'ordenes:buscar' %}">Órdenes de Trabajo</a>
+      {% endif %}
+      {% if user.rol != 'TECNICO' %}
+      <a href="{% url 'kardex:buscar' %}">Buscar</a>
+      {% endif %}
+    </div>
+
+    {% if user.rol == 'JEFE_OPERACIONES' or user.es_admin %}
+    <span class="nav-divisor" aria-hidden="true"></span>
+    <div class="nav-grupo">
+      <a href="{% url 'clientes:buscar' %}">Clientes</a>
+    </div>
+    {% endif %}
+
+    <span class="nav-divisor" aria-hidden="true"></span>
+    <div class="nav-grupo nav-utilidades">
+      <button id="btn-tema" class="btn-utilidad" type="button" title="Cambiar entre modo claro y oscuro">
+        <span id="btn-tema-texto">Modo oscuro</span>
+      </button>
+      <a href="{% url 'perfil' %}">Mi perfil</a>
+      <span class="usuario-chip">
+        <span class="avatar">{{ user.get_full_name|default:user.username|first|upper }}</span>
+        <span class="chip-texto">
+          <span class="chip-nombre">{{ user.get_full_name|default:user.username }}</span>
+          <span class="rol">{{ user.get_rol_display }}</span>
+        </span>
+      </span>
+      <form class="en-linea" method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-salir">Salir</button>
+      </form>
+    </div>
+  </nav>
+  <div id="nav-backdrop"></div>
+</header>
+{% endif %}
+<main>
+  {% if messages %}
+  <ul class="mensajes">
+    {% for message in messages %}
+    <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% block contenido %}{% endblock %}
+</main>
+<script>
+  // Evita duplicar líneas/envíos por doble clic accidental.
+  document.addEventListener('submit', function (evento) {
+    var formulario = evento.target;
+    if (formulario.dataset.enviando === '1') { evento.preventDefault(); return; }
+    formulario.dataset.enviando = '1';
+    formulario.querySelectorAll('button[type="submit"]').forEach(function (boton) {
+      boton.disabled = true;
+    });
+  }, true);
+
+  // Registro del service worker (PWA + notificaciones push).
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () { /* sin soporte, no pasa nada */ });
+    });
+  }
+
+  // Botón "Instalar app" — Chrome/Edge/Android avisan con este evento cuando la
+  // app cumple los requisitos de instalación (manifest + service worker + https/localhost).
+  // iOS Safari no dispara este evento (ahí se instala manual con "Compartir > Agregar a inicio").
+  (function () {
+    var promptDiferido = null;
+    var btn = document.getElementById('btn-instalar');
+    if (!btn) return;
+
+    window.addEventListener('beforeinstallprompt', function (evento) {
+      evento.preventDefault();
+      promptDiferido = evento;
+      btn.style.display = 'inline-flex';
+    });
+
+    btn.addEventListener('click', function () {
+      if (!promptDiferido) return;
+      promptDiferido.prompt();
+      promptDiferido.userChoice.finally(function () {
+        promptDiferido = null;
+        btn.style.display = 'none';
+      });
+    });
+
+    window.addEventListener('appinstalled', function () {
+      btn.style.display = 'none';
+      promptDiferido = null;
+    });
+  })();
+
+  // Modo claro/oscuro. El atributo data-tema ya se aplicó antes del primer pintado
+  // (script al inicio de <head>) si había una preferencia guardada — acá solo
+  // sincroniza el texto del botón y maneja el clic.
+  (function () {
+    var btn = document.getElementById('btn-tema');
+    var texto = document.getElementById('btn-tema-texto');
+    if (!btn || !texto) return;
+
+    function temaActual() {
+      var explicito = document.documentElement.getAttribute('data-tema');
+      if (explicito === 'claro' || explicito === 'oscuro') return explicito;
+      var prefiereOscuro = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return prefiereOscuro ? 'oscuro' : 'claro';
+    }
+
+    function actualizarTexto() {
+      texto.textContent = temaActual() === 'oscuro' ? 'Modo claro' : 'Modo oscuro';
+    }
+
+    btn.addEventListener('click', function () {
+      var nuevo = temaActual() === 'oscuro' ? 'claro' : 'oscuro';
+      document.documentElement.setAttribute('data-tema', nuevo);
+      try { localStorage.setItem('tema', nuevo); } catch (e) { /* sin almacenamiento, no pasa nada */ }
+      actualizarTexto();
+    });
+
+    actualizarTexto();
+  })();
+
+  // Menú hamburguesa (solo aparece en celular por CSS) — el <nav> se convierte en
+  // un panel lateral que se desliza desde la derecha.
+  (function () {
+    var btn = document.getElementById('btn-menu');
+    var nav = document.getElementById('nav-principal');
+    var backdrop = document.getElementById('nav-backdrop');
+    if (!btn || !nav || !backdrop) return;
+
+    function abierto() {
+      return nav.classList.contains('abierto');
+    }
+
+    function cerrar() {
+      nav.classList.remove('abierto');
+      backdrop.classList.remove('visible');
+      btn.classList.remove('abierto');
+      btn.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('nav-bloqueado');
+    }
+
+    function alternar() {
+      if (abierto()) { cerrar(); return; }
+      nav.classList.add('abierto');
+      backdrop.classList.add('visible');
+      btn.classList.add('abierto');
+      btn.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('nav-bloqueado');
+    }
+
+    btn.addEventListener('click', alternar);
+    backdrop.addEventListener('click', cerrar);
+
+    var enlaces = nav.querySelectorAll('a');
+    for (var i = 0; i < enlaces.length; i++) {
+      enlaces[i].addEventListener('click', cerrar);
+    }
+
+    document.addEventListener('keydown', function (evento) {
+      if (evento.key === 'Escape' && abierto()) cerrar();
+    });
+
+    // Si la pantalla crece a tamaño de escritorio con el menú abierto, se cierra
+    // solo para no dejarlo "pegado" si luego vuelve a achicarse la ventana.
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 640 && abierto()) cerrar();
+    });
+  })();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

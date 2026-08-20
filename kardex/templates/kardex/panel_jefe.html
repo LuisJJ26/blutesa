@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titulo %}Jefe de Operaciones — Kardex BLUTESA{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <h1>Kardex de la empresa</h1>
+  <p>La aprobación de Jefe de Operaciones quedó automática al cerrar el día — aquí ves todo lo que se ha movido, para tu control.</p>
+</div>
+
+<div class="tarjeta">
+  <h2>Historial</h2>
+  {% if historial %}
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr><th>Documento</th><th>Fecha</th><th>Estado</th><th>Creado por</th><th></th></tr>
+    {% for documento in historial %}
+    <tr>
+      <td><strong>{{ documento.numero_formateado }}</strong></td>
+      <td>{{ documento.fecha }}</td>
+      <td><span class="badge badge-{{ documento.estado }}">{{ documento.get_estado_display }}</span></td>
+      <td>{{ documento.creado_por }}</td>
+      <td><a class="btn btn-gris" href="{% url 'kardex:detalle' documento.pk %}">Ver</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p class="vacio">Todavía no hay documentos.</p>
+  {% endif %}
+</div>
+{% endblock %}

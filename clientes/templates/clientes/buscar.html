@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+{% block titulo %}Clientes{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'clientes/css/clientes.css' %}">{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina" style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;">
+  <div>
+    <h1>Clientes</h1>
+    <p>Maestro de clientes de Cable/TV y de Fibra/Internet — solo para consulta y búsqueda.</p>
+  </div>
+  {% if puede_administrar %}
+  <a class="btn btn-gris" href="/admin/clientes/" target="_blank" rel="noopener">Administrar clientes</a>
+  {% endif %}
+</div>
+
+<div class="tarjeta">
+  <form method="get">
+    <div class="campo campo-descripcion" style="margin-bottom:1rem;">
+      <label for="q">Nombre, código, cédula, barrio o teléfono</label>
+      <input type="text" id="q" name="q" value="{{ q }}">
+    </div>
+    <input type="hidden" id="campo-tipo" name="tipo" value="{{ tipo }}">
+    <input type="hidden" id="campo-estado" name="estado" value="{{ estado }}">
+
+    <div class="filtros-grupo">
+      <span class="filtros-etiqueta">Tipo</span>
+      <a class="btn-filtro{% if tipo == '' %} activo{% endif %}" href="?q={{ q|urlencode }}&amp;tipo=&amp;estado={{ estado }}">Todos</a>
+      <a class="btn-filtro{% if tipo == 'CABLE_TV' %} activo{% endif %}" href="?q={{ q|urlencode }}&amp;tipo=CABLE_TV&amp;estado={{ estado }}">Cable/TV</a>
+      <a class="btn-filtro{% if tipo == 'FIBRA' %} activo{% endif %}" href="?q={{ q|urlencode }}&amp;tipo=FIBRA&amp;estado={{ estado }}">Fibra/Internet</a>
+    </div>
+    <div class="filtros-grupo">
+      <span class="filtros-etiqueta">Estado <span class="texto-atenuado">(solo Cable/TV)</span></span>
+      <a class="btn-filtro{% if estado == '' %} activo{% endif %}" href="?q={{ q|urlencode }}&amp;tipo={{ tipo }}&amp;estado=">Todos</a>
+      <a class="btn-filtro{% if estado == 'ACTIVO' %} activo{% endif %}" href="?q={{ q|urlencode }}&amp;tipo={{ tipo }}&amp;estado=ACTIVO">Activos</a>
+      <a class="btn-filtro{% if estado == 'INACTIVO' %} activo{% endif %}" href="?q={{ q|urlencode }}&amp;tipo={{ tipo }}&amp;estado=INACTIVO">Inactivos</a>
+    </div>
+
+    <button class="btn btn-verde" type="submit" style="margin-top:1rem;">Buscar</button>
+    {% if q or tipo or estado %}<a class="btn btn-gris" href="{% url 'clientes:buscar' %}" style="margin-top:1rem;">Limpiar</a>{% endif %}
+  </form>
+</div>
+
+<div class="tarjeta">
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr><th>Tipo</th><th>Nombre</th><th>Código / Cédula</th><th>Barrio</th><th>Teléfono</th><th>Estado</th></tr>
+    {% for fila in filas %}
+    <tr>
+      <td><span class="badge badge-tipo-{{ fila.tipo }}">{{ fila.tipo_display }}</span></td>
+      <td>{{ fila.nombre }}</td>
+      <td>{{ fila.identificador }}</td>
+      <td>{{ fila.barrio }}</td>
+      <td>{{ fila.telefono|default:"—" }}</td>
+      <td>{{ fila.estado }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="vacio">Sin resultados.</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+
+  {% if pagina.has_other_pages %}
+  <div class="fila-acciones" style="margin-top:1rem;">
+    {% if pagina.has_previous %}<a class="btn btn-gris" href="?{{ querystring }}&amp;pagina={{ pagina.previous_page_number }}">Anterior</a>{% endif %}
+    <span class="texto-atenuado">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}<a class="btn btn-gris" href="?{{ querystring }}&amp;pagina={{ pagina.next_page_number }}">Siguiente</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

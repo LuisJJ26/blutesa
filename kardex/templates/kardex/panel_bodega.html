@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load kardex_extras %}
+{% block titulo %}Bodega — Kardex BLUTESA{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <h1>Kardex de hoy</h1>
+  <p>Abre el movimiento del día y ve agregando líneas hasta cerrarlo y enviarlo a aprobación.</p>
+</div>
+
+<div class="tarjeta">
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr><th>Tipo</th><th>Documento</th><th>Estado</th><th></th></tr>
+    {% for tipo_valor, tipo_nombre in tipos.choices %}
+    <tr>
+      <td>{{ tipo_nombre }}</td>
+      {% with documento=documentos_hoy|get_item:tipo_valor %}
+        {% if documento %}
+          <td><strong>{{ documento.numero_formateado }}</strong></td>
+          <td><span class="badge badge-{{ documento.estado }}">{{ documento.get_estado_display }}</span></td>
+          <td><a class="btn btn-gris" href="{% url 'kardex:detalle' documento.pk %}">Abrir</a></td>
+        {% else %}
+          <td colspan="2" class="vacio">Sin movimientos hoy</td>
+          <td>
+            <form class="en-linea" method="post" action="{% url 'kardex:abrir_hoy' tipo_valor %}">
+              {% csrf_token %}
+              <button class="btn btn-verde" type="submit">Abrir {{ tipo_nombre }} de hoy</button>
+            </form>
+          </td>
+        {% endif %}
+      {% endwith %}
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+</div>
+
+<div class="tarjeta">
+  <h2>Documentos anteriores</h2>
+  {% if recientes %}
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr><th>Documento</th><th>Fecha</th><th>Estado</th><th></th></tr>
+    {% for documento in recientes %}
+    <tr>
+      <td><strong>{{ documento.numero_formateado }}</strong></td>
+      <td>{{ documento.fecha }}</td>
+      <td><span class="badge badge-{{ documento.estado }}">{{ documento.get_estado_display }}</span></td>
+      <td><a class="btn btn-gris" href="{% url 'kardex:detalle' documento.pk %}">Ver</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p class="vacio">Todavía no hay documentos anteriores.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+{% block titulo %}Cerrar {{ orden.numero_formateado }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'ordenes/css/ordenes.css' %}">{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <h1>Cerrar {{ orden.numero_formateado }} — {{ orden.cliente_nombre }}</h1>
+  <p>{{ orden.get_tipo_servicio_display }} · {{ orden.barrio }} · {{ orden.direccion }}</p>
+</div>
+
+{% if cierre_form.non_field_errors or lineas_form.non_field_errors %}
+<ul class="mensajes">
+  {% for error in cierre_form.non_field_errors %}<li class="error">{{ error }}</li>{% endfor %}
+  {% for error in lineas_form.non_field_errors %}<li class="error">{{ error }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+
+  <div class="tarjeta">
+    <h2>Materiales usados</h2>
+    <div class="tabla-wrap">
+    <table class="tabla tabla-mantenimiento">
+      <tr><th>Concepto</th><th>Cantidad</th><th>Valor</th></tr>
+      {% for concepto, etiqueta, campo_cantidad, campo_valor in lineas_form.filas %}
+      <tr>
+        <td>{{ etiqueta }}</td>
+        <td>{{ campo_cantidad }}</td>
+        <td>{{ campo_valor }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Detalle del trabajo</h2>
+    <div class="form-linea-grid">
+      <div class="campo">
+        <label for="{{ cierre_form.reparado.id_for_label }}">Reparado</label>
+        {{ cierre_form.reparado }}
+      </div>
+      <div class="campo">
+        <label for="{{ cierre_form.tenia_cable_anteriormente.id_for_label }}">Tenía Cable Anteriormente</label>
+        {{ cierre_form.tenia_cable_anteriormente }}
+      </div>
+      <div class="campo campo-descripcion">
+        <label for="{{ cierre_form.nombre_anterior.id_for_label }}">A Nombre de Quién</label>
+        {{ cierre_form.nombre_anterior }}
+        {% for error in cierre_form.nombre_anterior.errors %}<p class="texto-atenuado" style="color:var(--danger-500);">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="campo">
+        <label for="{{ cierre_form.fecha_elaboracion.id_for_label }}">Fecha de Elaboración</label>
+        {{ cierre_form.fecha_elaboracion }}
+      </div>
+    </div>
+
+    <div class="campo-checkbox" style="margin-top:1rem;">
+      {{ cierre_form.nota_debito_aplica }}
+      <label for="{{ cierre_form.nota_debito_aplica.id_for_label }}">Aplica Nota de Débito</label>
+    </div>
+    <div class="campo" style="max-width:16rem;margin-top:.5rem;">
+      <label for="{{ cierre_form.nota_debito_numero.id_for_label }}">No. de Nota de Débito</label>
+      {{ cierre_form.nota_debito_numero }}
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Ubicación GPS</h2>
+    <div class="bloque-gps">
+      <p id="estado-gps">Solicitando permiso de ubicación…</p>
+      <button type="button" id="btn-reintentar-gps" class="btn btn-gris" style="padding:.4rem .8rem;font-size:.8rem;">Reintentar</button>
+    </div>
+    {{ cierre_form.gps_lat }}
+    {{ cierre_form.gps_lng }}
+    {{ cierre_form.gps_precision_m }}
+    <div class="campo-checkbox" style="margin-top:1rem;">
+      {{ cierre_form.sin_georreferencia }}
+      <label for="{{ cierre_form.sin_georreferencia.id_for_label }}">Cerrar sin georreferencia</label>
+    </div>
+    <div class="campo" style="margin-top:.5rem;">
+      <label for="{{ cierre_form.motivo_sin_gps.id_for_label }}">Motivo (si no hay GPS)</label>
+      {{ cierre_form.motivo_sin_gps }}
+      {% for error in cierre_form.motivo_sin_gps.errors %}<p class="texto-atenuado" style="color:var(--danger-500);">{{ error }}</p>{% endfor %}
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Foto del trabajo realizado</h2>
+    <p class="subnota">Se sube a Nextcloud, no queda guardada en este servidor.</p>
+    <div class="campo" style="max-width:20rem;">
+      <label for="foto_reparacion">Foto</label>
+      <input type="file" id="foto_reparacion" name="foto_reparacion" accept="image/*" capture="environment" multiple>
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <button class="btn btn-verde" type="submit" style="width:100%;">Cerrar Orden de Trabajo</button>
+  </div>
+</form>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'ordenes/js/cerrar.js' %}"></script>{% endblock %}

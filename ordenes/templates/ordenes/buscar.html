@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+{% block titulo %}Buscar Órdenes de Trabajo{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'ordenes/css/ordenes.css' %}">{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina" style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;">
+  <div>
+    <h1>Órdenes de Trabajo</h1>
+  </div>
+  <a class="btn btn-verde" href="{% url 'ordenes:crear' %}">+ Nueva Orden</a>
+</div>
+
+<div class="tarjeta">
+  <form method="get" class="form-linea-grid">
+    <div class="campo campo-descripcion">
+      <label for="q">Cliente, código, barrio o teléfono</label>
+      <input type="text" id="q" name="q" value="{{ q }}">
+    </div>
+    <div class="campo">
+      <label for="estado">Estado</label>
+      <select id="estado" name="estado">
+        <option value="">Todos</option>
+        {% for valor, nombre in estados.choices %}
+        <option value="{{ valor }}" {% if estado == valor %}selected{% endif %}>{{ nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="campo">
+      <label for="tipo_servicio">Tipo de Servicio</label>
+      <select id="tipo_servicio" name="tipo_servicio">
+        <option value="">Todos</option>
+        {% for valor, nombre in tipos_servicio.choices %}
+        <option value="{{ valor }}" {% if tipo_servicio == valor %}selected{% endif %}>{{ nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="campo">
+      <label for="desde">Desde</label>
+      <input type="date" id="desde" name="desde" value="{{ desde }}">
+    </div>
+    <div class="campo">
+      <label for="hasta">Hasta</label>
+      <input type="date" id="hasta" name="hasta" value="{{ hasta }}">
+    </div>
+    <div class="campo" style="align-self:flex-end;">
+      <button class="btn btn-verde" type="submit">Buscar</button>
+      {% if hay_filtros %}<a class="btn btn-gris" href="{% url 'ordenes:buscar' %}">Limpiar</a>{% endif %}
+    </div>
+  </form>
+</div>
+
+<div class="tarjeta">
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr><th>Orden</th><th>Cliente</th><th>Barrio</th><th>Tipo de Servicio</th><th>Técnico</th><th>Fecha</th><th>Estado</th><th></th></tr>
+    {% for orden in pagina %}
+    <tr>
+      <td><strong>{{ orden.numero_formateado }}</strong></td>
+      <td>{{ orden.cliente_nombre }}</td>
+      <td>{{ orden.barrio }}</td>
+      <td>{{ orden.get_tipo_servicio_display }}</td>
+      <td>{{ orden.tecnico|default:"Sin asignar" }}</td>
+      <td>{{ orden.fecha }}</td>
+      <td><span class="badge badge-{{ orden.estado }}">{{ orden.get_estado_display }}</span></td>
+      <td><a class="btn btn-gris" href="{% url 'ordenes:detalle' orden.pk %}">Ver</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="8" class="vacio">Sin resultados.</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+
+  {% if pagina.has_other_pages %}
+  <div class="fila-acciones" style="margin-top:1rem;">
+    {% if pagina.has_previous %}<a class="btn btn-gris" href="?{{ querystring }}&pagina={{ pagina.previous_page_number }}">Anterior</a>{% endif %}
+    <span class="texto-atenuado">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}<a class="btn btn-gris" href="?{{ querystring }}&pagina={{ pagina.next_page_number }}">Siguiente</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

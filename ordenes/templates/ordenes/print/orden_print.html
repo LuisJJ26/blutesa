@@ -1,0 +1,124 @@
+{% load kardex_extras %}<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ orden.numero_formateado }}</title>
+<style>
+  @page { size: portrait; margin: 0.5in; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #000; margin: 0; padding: 0.4in; font-size: 10.5pt; }
+  .barra-pantalla { text-align: center; margin-bottom: 12px; }
+  .barra-pantalla button {
+    font-family: Arial, sans-serif; padding: .5rem 1.2rem; border: 1px solid #14355c;
+    background: #14355c; color: #fff; border-radius: 4px; cursor: pointer; font-size: .95rem;
+  }
+  @media print { .barra-pantalla { display: none; } }
+
+  .titulo-empresa { font-size: 14pt; font-weight: bold; text-align: center; }
+  .titulo-blutesa { font-size: 10.5pt; font-weight: bold; text-align: center; margin-bottom: 6px; }
+  .titulo-doc { font-size: 12pt; font-weight: bold; text-align: center; margin-bottom: 2px; }
+  .num-doc { font-size: 12pt; font-weight: bold; color: #ff0000; text-align: center; margin-bottom: 10px; }
+
+  table.cabecera { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  table.cabecera td { padding: 3px 4px; vertical-align: bottom; }
+  table.cabecera .etiqueta { font-weight: bold; white-space: nowrap; }
+  table.cabecera .valor { border-bottom: 1px solid #000; }
+
+  .subtitulo { font-weight: bold; margin: 10px 0 4px; text-decoration: underline; }
+
+  table.mantenimiento { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  table.mantenimiento th, table.mantenimiento td { border: 1px solid #000; padding: 3px 5px; font-size: 9.5pt; }
+  table.mantenimiento th { text-align: center; background: #fff; }
+  table.mantenimiento td.num { text-align: center; }
+  table.mantenimiento tr.total td { font-weight: bold; text-align: right; }
+
+  table.pie { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  table.pie td { padding: 3px 4px; vertical-align: bottom; }
+  table.pie .etiqueta { font-weight: bold; white-space: nowrap; }
+  table.pie .valor { border-bottom: 1px solid #000; }
+
+  .firmas { width: 100%; border-collapse: collapse; margin-top: 40px; }
+  .firmas td { text-align: center; padding-top: 26px; width: 50%; }
+  .firma-img { max-height: 45px; max-width: 90%; margin-bottom: -6px; }
+  .firma-linea { border-top: 1px solid #000; padding-top: 4px; font-size: 9pt; }
+
+  @media screen and (max-width: 480px) {
+    body { padding: 0.15in; font-size: 9pt; }
+    table.mantenimiento th, table.mantenimiento td { padding: 3px; font-size: 8pt; }
+    table.cabecera .etiqueta, table.pie .etiqueta { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+
+<div class="barra-pantalla"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>
+
+<div class="titulo-empresa">BLUFIELDS TELEVICABLE S.A.</div>
+<div class="titulo-blutesa">BLUTESA</div>
+<div class="titulo-doc">ORDEN DE TRABAJO</div>
+<div class="num-doc">No. {{ orden.numero_formateado }}</div>
+
+<table class="cabecera">
+  <tr>
+    <td class="etiqueta">Nombres y Apellidos:</td>
+    <td class="valor" colspan="3">{{ orden.cliente_nombre }} {% if orden.cliente_codigo %}({{ orden.cliente_codigo }}){% endif %}</td>
+  </tr>
+  <tr>
+    <td class="etiqueta">Barrio:</td><td class="valor">{{ orden.barrio }}</td>
+    <td class="etiqueta">Fecha:</td><td class="valor">{{ orden.fecha|date:"d/m/Y" }}</td>
+  </tr>
+  <tr>
+    <td class="etiqueta">Dirección:</td>
+    <td class="valor" colspan="3">{{ orden.direccion }} {% if orden.telefono %}TEL. {{ orden.telefono }}{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="etiqueta">Tipo de Servicio:</td>
+    <td class="valor" colspan="3">{{ orden.get_tipo_servicio_display }}{% if orden.tipo_servicio_detalle %} — {{ orden.tipo_servicio_detalle }}{% endif %}</td>
+  </tr>
+</table>
+
+<div class="subtitulo">Detalle del Trabajo a Realizar</div>
+<p>Reparado: <strong>{{ orden.get_reparado_display|default:"—" }}</strong>
+&nbsp;&nbsp;&nbsp;
+NOTA DE DÉBITO{% if orden.nota_debito_aplica %}: {{ orden.nota_debito_numero|default:"—" }}{% else %}: No aplica{% endif %}</p>
+
+<table class="mantenimiento">
+  <tr><th style="text-align:left;">Descripción</th><th>Cant.</th><th>Valor</th></tr>
+  {% for concepto, etiqueta in conceptos %}
+  {% with linea=lineas|get_item:concepto %}
+  <tr>
+    <td>{{ etiqueta }}</td>
+    <td class="num">{{ linea.cantidad|default:"—" }}</td>
+    <td class="num">{{ linea.valor|default:"—" }}</td>
+  </tr>
+  {% endwith %}
+  {% endfor %}
+</table>
+
+<table class="pie">
+  <tr>
+    <td class="etiqueta">Posibilidad Técnica:</td><td class="valor">{{ orden.get_posibilidad_tecnica_display|default:"—" }}</td>
+    <td class="etiqueta">Fecha de Elaboración del Trabajo:</td><td class="valor">{{ orden.fecha_elaboracion|date:"d/m/Y"|default:"—" }}</td>
+  </tr>
+  <tr>
+    <td class="etiqueta">Tenía Cable Anteriormente:</td><td class="valor">{{ orden.get_tenia_cable_anteriormente_display|default:"—" }}</td>
+    <td class="etiqueta">A Nombre de Quién:</td><td class="valor">{{ orden.nombre_anterior|default:"—" }}</td>
+  </tr>
+</table>
+
+<table class="firmas">
+  <tr>
+    <td>
+      {% if orden.cerrado_por.firma %}<img class="firma-img" src="{{ orden.cerrado_por.firma.url }}">{% endif %}
+      <div class="firma-linea">Firma del Técnico<br>{{ orden.cerrado_por|default:"" }}</div>
+    </td>
+    <td>
+      {% if orden.autorizado_por.firma %}<img class="firma-img" src="{{ orden.autorizado_por.firma.url }}">{% endif %}
+      <div class="firma-linea">Autorizado Por<br>{{ orden.autorizado_por|default:"" }}</div>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

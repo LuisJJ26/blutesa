@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block titulo %}{{ documento.numero_formateado }} — Kardex BLUTESA{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <h1>{{ documento.titulo }} — {{ documento.numero_formateado }}</h1>
+  <p>{{ documento.fecha }} · Creado por {{ documento.creado_por }}</p>
+</div>
+
+<div class="tarjeta">
+  <div class="stepper">
+    <div class="paso {% if documento.estado == 'ABIERTO' or documento.estado == 'RECHAZADO' %}actual{% else %}completo{% endif %}">
+      <div class="punto">1</div>
+      <div class="etiqueta">Bodeguero</div>
+      <div class="subetiqueta">{{ documento.creado_por }}</div>
+    </div>
+    <div class="paso {% if documento.aprobado_por %}completo{% endif %}">
+      <div class="linea"></div>
+      <div class="punto">2</div>
+      <div class="etiqueta">Jefe de Operaciones</div>
+      <div class="subetiqueta">
+        {% if documento.aprobado_por %}{{ documento.aprobado_por }} (auto)
+        {% else %}Pendiente{% endif %}
+      </div>
+    </div>
+    <div class="paso
+      {% if documento.estado == 'RECHAZADO' %}rechazado
+      {% elif documento.estado == 'APROBADO' %}actual
+      {% elif documento.estado == 'REVISADO' %}completo
+      {% endif %}">
+      <div class="linea"></div>
+      <div class="punto">3</div>
+      <div class="etiqueta">Auxiliar Contable</div>
+      <div class="subetiqueta">
+        {% if documento.estado == 'RECHAZADO' %}Rechazó: {{ documento.rechazado_por }}
+        {% elif documento.revisado_por %}{{ documento.revisado_por }}
+        {% else %}Pendiente{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if documento.estado == 'RECHAZADO' %}
+    <ul class="mensajes" style="margin-bottom:1rem;">
+      <li class="error"><strong>Rechazado por {{ documento.rechazado_por }}:</strong> {{ documento.motivo_rechazo }}</li>
+    </ul>
+  {% endif %}
+
+  <p>
+    {% if documento.tipo != 'SA' %}<strong>{{ documento.etiqueta_parte }}</strong> {{ documento.parte|default:"—" }} &nbsp;&nbsp;{% endif %}
+    <strong>{{ documento.etiqueta_referencia }}</strong> {{ documento.referencia|default:"—" }}
+  </p>
+</div>
+
+<div class="tarjeta">
+  <h2>Líneas</h2>
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr>
+      <th>Clasif.</th><th>E</th><th>L</th><th>C</th><th>Descripción</th>
+      <th>Cantidad</th><th>Unidad</th><th>Precio Unit.</th><th>Importe</th>
+      {% if documento.tipo == 'SA' %}<th>Entregado a</th>{% endif %}
+    </tr>
+    {% for linea in lineas %}
+    <tr>
+      <td>{{ linea.clasif }}</td>
+      <td>{{ linea.loc_e }}</td>
+      <td>{{ linea.loc_l }}</td>
+      <td>{{ linea.loc_c }}</td>
+      <td>{{ linea.descripcion }}</td>
+      <td>{{ linea.cantidad|default:"" }}</td>
+      <td>{{ linea.unidad }}</td>
+      <td>{{ linea.precio_unitario|default:"" }}</td>
+      <td>{{ linea.importe|default:"" }}</td>
+      {% if documento.tipo == 'SA' %}<td>{{ linea.entregado_a }}</td>{% endif %}
+    </tr>
+    {% empty %}
+    <tr><td colspan="10" class="vacio">Todavía no hay líneas.</td></tr>
+    {% endfor %}
+    <tr>
+      <td colspan="8" style="text-align:right;font-weight:700;color:var(--navy-800);">TOTAL</td>
+      <td style="font-weight:700;color:var(--navy-800);">{{ documento.total_importe }}</td>
+      {% if documento.tipo == 'SA' %}<td></td>{% endif %}
+    </tr>
+  </table>
+  </div>
+</div>
+
+<div class="tarjeta">
+  <h2>Acciones</h2>
+  <div class="fila-acciones">
+    <a class="btn btn-gris" href="{% url 'kardex:imprimir' documento.pk %}" target="_blank">Imprimir</a>
+  </div>
+</div>
+{% endblock %}

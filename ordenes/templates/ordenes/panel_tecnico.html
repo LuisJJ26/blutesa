@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titulo %}Mis Órdenes de Trabajo{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <h1>Mis Órdenes de Trabajo</h1>
+  <p>Al llegar al sitio y terminar, abre la orden y ciérrala con los materiales usados, la foto del trabajo y la ubicación GPS.</p>
+</div>
+
+<div class="tarjeta">
+  <h2>Pendientes</h2>
+  {% if pendientes %}
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr><th>Orden</th><th>Cliente</th><th>Barrio</th><th>Tipo de Servicio</th><th>Fecha</th><th></th></tr>
+    {% for orden in pendientes %}
+    <tr>
+      <td><strong>{{ orden.numero_formateado }}</strong></td>
+      <td>{{ orden.cliente_nombre }}</td>
+      <td>{{ orden.barrio }}</td>
+      <td>{{ orden.get_tipo_servicio_display }}</td>
+      <td>{{ orden.fecha }}</td>
+      <td><a class="btn btn-verde" href="{% url 'ordenes:detalle' orden.pk %}">Abrir</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p class="vacio">No tienes órdenes pendientes.</p>
+  {% endif %}
+</div>
+
+<div class="tarjeta">
+  <h2>Cerradas recientemente</h2>
+  {% if cerradas %}
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr><th>Orden</th><th>Cliente</th><th>Fecha de cierre</th><th></th></tr>
+    {% for orden in cerradas %}
+    <tr>
+      <td><strong>{{ orden.numero_formateado }}</strong></td>
+      <td>{{ orden.cliente_nombre }}</td>
+      <td>{{ orden.fecha_cierre|date:"d/m/Y H:i" }}</td>
+      <td><a class="btn btn-gris" href="{% url 'ordenes:detalle' orden.pk %}">Ver</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p class="vacio">Todavía no has cerrado ninguna orden.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titulo %}Iniciar sesión — Kardex BLUTESA{% endblock %}
+{% block contenido %}
+<div class="pantalla-login">
+  <div class="tarjeta-login">
+    <div class="isotipo-grande">{% include "_isotipo.html" with tam=56 sufijo="login" %}</div>
+    <h2>BLUTESA · Kardex de Almacén</h2>
+    <p class="subtitulo">Entrada y Salida de Almacén, digitalizado</p>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <p>
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<div style="color:var(--danger-500);font-size:.82rem;margin-top:.25rem;">{{ error }}</div>{% endfor %}
+        </p>
+      {% endfor %}
+      {% if form.non_field_errors %}
+        <div style="color:var(--danger-500);font-size:.85rem;margin-bottom:.75rem;">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <button class="btn" type="submit">Entrar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

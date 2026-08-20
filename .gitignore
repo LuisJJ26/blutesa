@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+db.sqlite3
+staticfiles/
+media/
+.env
+.vapid_keys.json
+_respaldos/
+datadump.json

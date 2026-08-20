@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block titulo %}Error del servidor — Kardex BLUTESA{% endblock %}
+{% block contenido %}
+<div class="pantalla-login">
+  <div class="tarjeta-login" style="text-align:center;">
+    <div class="isotipo-grande">{% include "_isotipo.html" with tam=56 sufijo="500" %}</div>
+    <h2 style="font-size:2.2rem;margin-bottom:.3rem;">Algo salió mal</h2>
+    <p class="subtitulo" style="margin-bottom:1.5rem;">
+      Hubo un error inesperado de nuestro lado. Ya quedó registrado — intenta de nuevo en un
+      momento, o vuelve al inicio.
+    </p>
+    <a class="btn" href="/">Volver al inicio</a>
+  </div>
+</div>
+{% endblock %}

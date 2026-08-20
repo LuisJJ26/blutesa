@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block titulo %}Buscar kardex — Kardex BLUTESA{% endblock %}
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <h1>Buscar kardex</h1>
+  <p>Por número, fecha, quién lo creó, proveedor/entregado a, o el motivo de un rechazo.</p>
+</div>
+
+<div class="tarjeta">
+  <form method="get" class="form-linea-grid" style="align-items:flex-end;">
+    <div class="campo" style="flex:1 1 220px;">
+      <label for="id-q">Buscar</label>
+      <input type="text" id="id-q" name="q" value="{{ q }}" placeholder="Ej. 5850, Julio, F-00123...">
+    </div>
+    <div class="campo" style="width:9rem;">
+      <label for="id-tipo">Tipo</label>
+      <select id="id-tipo" name="tipo">
+        <option value="">Todos</option>
+        {% for valor, nombre in tipos.choices %}
+        <option value="{{ valor }}" {% if tipo == valor %}selected{% endif %}>{{ nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="campo" style="width:11rem;">
+      <label for="id-estado">Estado</label>
+      <select id="id-estado" name="estado">
+        <option value="">Todos</option>
+        {% for valor, nombre in estados.choices %}
+        <option value="{{ valor }}" {% if estado == valor %}selected{% endif %}>{{ nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="campo" style="width:9.5rem;">
+      <label for="id-desde">Desde</label>
+      <input type="date" id="id-desde" name="desde" value="{{ desde }}">
+    </div>
+    <div class="campo" style="width:9.5rem;">
+      <label for="id-hasta">Hasta</label>
+      <input type="date" id="id-hasta" name="hasta" value="{{ hasta }}">
+    </div>
+    <div class="campo" style="width:auto;flex:none;">
+      <button class="btn" type="submit">Buscar</button>
+      {% if hay_filtros %}<a class="btn btn-gris" href="{% url 'kardex:buscar' %}">Limpiar</a>{% endif %}
+    </div>
+  </form>
+</div>
+
+<div class="tarjeta">
+  <h2>
+    Resultados
+    <span class="texto-atenuado" style="font-weight:400;font-size:.85rem;">({{ pagina.paginator.count }})</span>
+  </h2>
+  {% if pagina.object_list %}
+  <div class="tabla-wrap">
+  <table class="tabla">
+    <tr>
+      <th>Documento</th><th>Tipo</th><th>Fecha</th><th>Estado</th>
+      <th>Creado por</th><th>Total importe</th><th></th>
+    </tr>
+    {% for documento in pagina.object_list %}
+    <tr>
+      <td><strong>{{ documento.numero_formateado }}</strong></td>
+      <td>{{ documento.titulo }}</td>
+      <td>{{ documento.fecha }}</td>
+      <td><span class="badge badge-{{ documento.estado }}">{{ documento.get_estado_display }}</span></td>
+      <td>{{ documento.creado_por }}</td>
+      <td>{{ documento.total_importe }}</td>
+      <td><a class="btn btn-gris" style="padding:.3rem .65rem;font-size:.78rem;" href="{% url 'kardex:detalle' documento.pk %}">Ver</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+
+  {% if pagina.paginator.num_pages > 1 %}
+  <div class="fila-acciones" style="margin-top:1.25rem;align-items:center;">
+    {% if pagina.has_previous %}
+    <a class="btn btn-gris" href="?{% if querystring %}{{ querystring }}&{% endif %}pagina={{ pagina.previous_page_number }}">&larr; Anterior</a>
+    {% endif %}
+    <span class="texto-atenuado">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}
+    <a class="btn btn-gris" href="?{% if querystring %}{{ querystring }}&{% endif %}pagina={{ pagina.next_page_number }}">Siguiente &rarr;</a>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <p class="vacio">
+    {% if hay_filtros %}No hay kardex que coincidan con esa búsqueda.{% else %}Todavía no hay kardex registrados.{% endif %}
+  </p>
+  {% endif %}
+</div>
+{% endblock %}
