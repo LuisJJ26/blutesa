@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
 {% block titulo %}{{ orden.numero_formateado }} — Órdenes de Trabajo{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'ordenes/css/ordenes.css' %}">{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'ordenes/css/ordenes.css' %}">
+{% if orden.estado == 'CERRADA' and orden.gps_lat %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endif %}
+{% endblock %}
 {% block contenido %}
 
 <div class="encabezado-pagina">
@@ -47,6 +52,7 @@
         {% if orden.sin_georreferencia %}Sin georreferencia — {{ orden.motivo_sin_gps }}
         {% elif orden.gps_lat %}{{ orden.gps_lat|floatformat:5 }}, {{ orden.gps_lng|floatformat:5 }}
           <span class="texto-atenuado">(±{{ orden.gps_precision_m|floatformat:0 }} m)</span>
+          — <a href="https://www.google.com/maps?q={{ orden.gps_lat }},{{ orden.gps_lng }}" target="_blank" rel="noopener">Abrir en Google Maps</a>
         {% else %}—{% endif %}
       </p>
     </div>
@@ -54,13 +60,17 @@
     <div><label>Autorizado por</label><p>{{ orden.autorizado_por|default:"—" }}</p></div>
   </div>
 
+  {% if orden.gps_lat %}
+  <div id="mapa-ubicacion" class="mapa-ubicacion" data-lat="{{ orden.gps_lat }}" data-lng="{{ orden.gps_lng }}"></div>
+  {% endif %}
+
   {% if fotos %}
   <div style="margin-top:1.25rem;">
     <label>Foto del trabajo realizado</label>
     <div class="fotos-grid">
       {% for foto in fotos %}
       <div class="foto-item">
-        {% if foto.url_publica %}<a href="{{ foto.url_publica }}" target="_blank"><img src="{{ foto.url_publica }}" alt="Foto del trabajo realizado"></a>
+        {% if foto.url_publica %}<a href="{{ foto.url_publica }}" target="_blank" rel="noopener" data-lightbox><img src="{{ foto.url_publica }}" alt="Foto del trabajo realizado"></a>
         {% else %}<span class="texto-atenuado">{{ foto.ruta_nextcloud }}</span>{% endif %}
       </div>
       {% endfor %}
@@ -69,6 +79,11 @@
   {% endif %}
 </div>
 {% endif %}
+
+<div id="lightbox-overlay" class="lightbox-overlay">
+  <button type="button" id="lightbox-cerrar" class="lightbox-cerrar" aria-label="Cerrar">&times;</button>
+  <img id="lightbox-imagen" src="" alt="Foto del trabajo realizado ampliada">
+</div>
 
 <div class="tarjeta">
   <h2>Acciones</h2>
@@ -85,4 +100,11 @@
     <a class="btn btn-gris" href="{% url 'ordenes:imprimir' orden.pk %}" target="_blank">Imprimir</a>
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'ordenes/js/lightbox.js' %}"></script>
+{% if orden.estado == 'CERRADA' and orden.gps_lat %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'ordenes/js/mapa_orden.js' %}"></script>
+{% endif %}
 {% endblock %}

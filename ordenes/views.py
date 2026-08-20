@@ -111,6 +111,11 @@ def cerrar(request, pk):
         if formularios_validos:
             ahora = timezone.now()
             orden = cierre_form.save(commit=False)
+            # gps_lat/gps_lng/gps_precision_m son campos del form pero no del ModelForm
+            # (Meta.fields no los incluye), así que save(commit=False) no los copia solo.
+            orden.gps_lat = cierre_form.cleaned_data.get('gps_lat')
+            orden.gps_lng = cierre_form.cleaned_data.get('gps_lng')
+            orden.gps_precision_m = cierre_form.cleaned_data.get('gps_precision_m')
             orden.estado = OrdenTrabajo.Estado.CERRADA
             orden.cerrado_por = request.user
             orden.fecha_cierre = ahora
